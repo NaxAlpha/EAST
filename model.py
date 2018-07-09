@@ -4,8 +4,10 @@ import numpy as np
 from tensorflow.contrib import slim
 
 tf.app.flags.DEFINE_integer('text_scale', 512, '')
+tf.app.flags.DEFINE_string('network', 'pvanet', '')
 
 from nets import resnet_v1
+from pvanet import pvanet, pvanet_scope
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -36,8 +38,15 @@ def model(images, weight_decay=1e-5, is_training=True):
     '''
     images = mean_image_subtraction(images)
 
-    with slim.arg_scope(resnet_v1.resnet_arg_scope(weight_decay=weight_decay)):
-        logits, end_points = resnet_v1.resnet_v1_50(images, is_training=is_training, scope='resnet_v1_50')
+    if FLAGS.network == 'pvanet':
+        with slim.arg_scope(pvanet_scope(is_training)):
+            logits, end_points = pvanet(images)
+    elif FLAGS.network == 'resnet':
+        with slim.arg_scope(resnet_v1.resnet_arg_scope(weight_decay=weight_decay)):
+            logits, end_points = resnet_v1.resnet_v1_50(images, is_training=is_training, scope='resnet_v1_50')
+    else:
+        print('Unknown Model: '+FLAGS.network)
+        exit(0)
 
     with tf.variable_scope('feature_fusion', values=[end_points.values]):
         batch_norm_params = {

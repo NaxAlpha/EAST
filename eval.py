@@ -2,11 +2,12 @@ import cv2
 import time
 import math
 import os
+import sys
 import numpy as np
 import tensorflow as tf
 
-import locality_aware_nms as nms_locality
-import lanms
+#import locality_aware_nms as nms_locality
+from lanms import merge_quadrangle_n9
 
 tf.app.flags.DEFINE_string('test_data_path', '/tmp/ch4_test_images/images/', '')
 tf.app.flags.DEFINE_string('gpu_list', '0', '')
@@ -95,7 +96,7 @@ def detect(score_map, geo_map, timer, score_map_thresh=0.8, box_thresh=0.1, nms_
     # nms part
     start = time.time()
     # boxes = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
-    boxes = lanms.merge_quadrangle_n9(boxes.astype('float32'), nms_thres)
+    boxes = merge_quadrangle_n9(boxes.astype('float32'), nms_thres)
     timer['nms'] = time.time() - start
 
     if boxes.shape[0] == 0:
@@ -139,12 +140,14 @@ def main(argv=None):
 
         variable_averages = tf.train.ExponentialMovingAverage(0.997, global_step)
         saver = tf.train.Saver(variable_averages.variables_to_restore())
+        # saver_v1 = tf.train.Saver(write_version=tf.train.SaverDef.V1)
 
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             ckpt_state = tf.train.get_checkpoint_state(FLAGS.checkpoint_path)
             model_path = os.path.join(FLAGS.checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
             print('Restore from {}'.format(model_path))
             saver.restore(sess, model_path)
+            # saver_v1.save(sess, '../pretrained-model/east.ckpt')
 
             im_fn_list = get_images()
             for im_fn in im_fn_list:

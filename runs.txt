@@ -1,0 +1,33 @@
+python .\eval.py `
+	--network=resnet `
+	--checkpoint_path=..\pretrained-model\ `
+	--test_data_path=..\test-samples\ `
+	--ooutput_dir=..\test-results\
+
+python multigpu_train.py `
+	--network=pvanet `
+	--gpu_list=0 `
+	--input_size=512 `
+	--batch_size_per_gpu=14 `
+	--checkpoint_path=..\east-training-output `
+	--text_scale=512 `
+	--training_data_path=..\ `
+	--geometry=RBOX `
+	--learning_rate=0.00001 `
+	--num_readers=24 `
+	--pretrained_model_path=..\pvanet-imagenet\pva.ckpt `
+	--restore
+
+python multigpu_train.py `
+	--network=pvanet `
+	--gpu_list=0 `
+	--input_size=512 `
+	--batch_size_per_gpu=14 `
+	--checkpoint_path=..\pretrained-model `
+	--text_scale=512 `
+	--training_data_path=..\ `
+	--geometry=RBOX `
+	--learning_rate=0.00001 `
+	--num_readers=4 `
+	--pretrained_model_path=..\pvanet-imagenet\pva.ckpt `
+	--restore
